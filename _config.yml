@@ -1,0 +1,30 @@
+title: "Harvey's IT Blog"
+email: harvey@example.com
+description: >- # this means to ignore newlines until "baseurl:"
+  A modern blog dedicated to cloud architecture, software engineering, DevSecOps, and artificial intelligence.
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "https://neonharvey.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+twitter_username: neonharvey
+github_username:  neonharvey
+
+markdown: kramdown
+theme: minima
+plugins:
+  - jekyll-feed
+
+# Color schemes/styles used in UI templates
+accent_color: "#0284c7"
+
+# Excludes
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - .jekyll-cache
+  - .jekyll-metadata
+  - server.log
+  - .gitignore

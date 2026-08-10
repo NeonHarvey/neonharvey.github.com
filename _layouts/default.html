@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if page.title %}{{ page.title }} | {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
+  <meta name="description" content="{% if page.excerpt %}{{ page.excerpt | strip_html | strip_newlines | truncate: 160 }}{% else %}{{ site.description }}{% endif %}">
+
+  <!-- Tailwind CSS via CDN for rapid responsive layout styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Configure tailwind dark mode class-based strategy
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            accent: '#0284c7',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Font Awesome for sleek modern icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Custom Overrides -->
+  <link rel="stylesheet" href="{{ '/assets/css/custom.css' | relative_url }}">
+
+  <!-- Dark Mode No-Flash script -->
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 flex flex-col min-h-screen transition-colors duration-200">
+
+  <!-- Responsive Navigation Header -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+
+        <!-- Brand Identity with Icon -->
+        <a href="{{ '/' | relative_url }}" class="flex items-center space-x-3 group">
+          <div class="w-10 h-10 bg-gradient-to-tr from-sky-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+            <i class="fa-solid fa-code"></i>
+          </div>
+          <div>
+            <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-slate-900 to-indigo-950 dark:from-white dark:to-sky-200 bg-clip-text text-transparent">
+              Harvey's IT Blog
+            </span>
+            <span class="block text-xs font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-widest -mt-1">
+              Tech, Cloud & Systems
+            </span>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex items-center space-x-8 font-medium">
+          <a href="{{ '/' | relative_url }}" class="text-slate-600 hover:text-sky-600 dark:text-slate-300 dark:hover:text-sky-400 transition-colors">Home</a>
+          <a href="{{ '/' | relative_url }}#categories" class="text-slate-600 hover:text-sky-600 dark:text-slate-300 dark:hover:text-sky-400 transition-colors">Categories</a>
+          <a href="{{ '/about.html' | relative_url }}" class="text-slate-600 hover:text-sky-600 dark:text-slate-300 dark:hover:text-sky-400 transition-colors">About</a>
+
+          <!-- Desktop Mode Toggle -->
+          <button id="theme-toggle-desktop" class="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors shadow-inner" aria-label="Toggle Theme">
+            <i class="fa-solid fa-moon dark:hidden text-slate-600"></i>
+            <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+          </button>
+        </nav>
+
+        <!-- Mobile Header Controls -->
+        <div class="flex items-center md:hidden space-x-4">
+          <!-- Mobile Theme Toggle -->
+          <button id="theme-toggle-mobile" class="w-9 h-9 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors" aria-label="Toggle Theme">
+            <i class="fa-solid fa-moon dark:hidden text-slate-600"></i>
+            <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+          </button>
+
+          <!-- Mobile Hamburger Toggle -->
+          <button id="mobile-menu-btn" class="text-slate-600 dark:text-slate-300 p-1 focus:outline-none" aria-label="Open Navigation Menu">
+            <i class="fa-solid fa-bars text-xl" id="menu-icon"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-all duration-200 ease-in-out">
+      <div class="px-4 pt-2 pb-4 space-y-2">
+        <a href="{{ '/' | relative_url }}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Home</a>
+        <a href="{{ '/' | relative_url }}#categories" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Categories</a>
+        <a href="{{ '/about.html' | relative_url }}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">About</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Content Slot -->
+  <main class="flex-grow">
+    {{ content }}
+  </main>
+
+  <!-- Modern Interactive Footer -->
+  <footer class="bg-slate-900 text-slate-400 border-t border-slate-800 py-12">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <!-- About Harvey's IT Blog -->
+        <div>
+          <div class="flex items-center space-x-3 mb-4">
+            <div class="w-8 h-8 bg-sky-500 rounded flex items-center justify-center text-white font-bold shadow">
+              <i class="fa-solid fa-code text-sm"></i>
+            </div>
+            <span class="font-extrabold text-white tracking-wider uppercase text-sm">Harvey's IT Blog</span>
+          </div>
+          <p class="text-sm leading-relaxed text-slate-400">
+            A premium IT journal publishing high-quality analysis, production guides, and technology checklists for architects, software engineers, and DevOps professionals.
+          </p>
+        </div>
+
+        <!-- Useful Links -->
+        <div>
+          <h3 class="text-white font-semibold text-sm uppercase tracking-wider mb-4">Explore</h3>
+          <ul class="space-y-2 text-sm">
+            <li><a href="{{ '/' | relative_url }}" class="hover:text-white hover:underline transition-colors">Publications Dashboard</a></li>
+            <li><a href="{{ '/' | relative_url }}#categories" class="hover:text-white hover:underline transition-colors">Article Directory</a></li>
+            <li><a href="{{ '/about.html' | relative_url }}" class="hover:text-white hover:underline transition-colors">About Harvey</a></li>
+          </ul>
+        </div>
+
+        <!-- Social Connections -->
+        <div>
+          <h3 class="text-white font-semibold text-sm uppercase tracking-wider mb-4">Connect</h3>
+          <div class="flex space-x-4 mb-4">
+            <a href="https://github.com/{{ site.github_username }}" class="w-10 h-10 bg-slate-800 hover:bg-sky-600 hover:text-white rounded-full flex items-center justify-center transition-colors text-slate-300" aria-label="Github Profile">
+              <i class="fa-brands fa-github text-lg"></i>
+            </a>
+            <a href="https://twitter.com/{{ site.twitter_username }}" class="w-10 h-10 bg-slate-800 hover:bg-sky-600 hover:text-white rounded-full flex items-center justify-center transition-colors text-slate-300" aria-label="Twitter Feed">
+              <i class="fa-brands fa-twitter text-lg"></i>
+            </a>
+            <a href="mailto:{{ site.email }}" class="w-10 h-10 bg-slate-800 hover:bg-sky-600 hover:text-white rounded-full flex items-center justify-center transition-colors text-slate-300" aria-label="Send Email">
+              <i class="fa-solid fa-envelope text-lg"></i>
+            </a>
+          </div>
+          <p class="text-xs text-slate-500">
+            &copy; {{ 'now' | date: "%Y" }} Harvey's IT Blog. Built with Jekyll & Tailwind.
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scroll-to-Top Button -->
+  <button id="scroll-to-top" class="fixed bottom-6 right-6 z-40 bg-sky-600 hover:bg-sky-500 text-white w-12 h-12 rounded-full shadow-lg hover:shadow-sky-600/30 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 transform translate-y-4 hover:scale-105" aria-label="Scroll to top">
+    <i class="fa-solid fa-arrow-up text-lg"></i>
+  </button>
+
+  <!-- Main Interaction Scripts -->
+  <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
+</body>
+</html>

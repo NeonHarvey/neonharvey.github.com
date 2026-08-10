@@ -1,0 +1,175 @@
+---
+layout: default
+---
+
+<!-- Beautiful Hero / Intro Section with IT Visual Card -->
+<section class="relative bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 text-white overflow-hidden py-16 md:py-24 border-b border-indigo-950">
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/30 via-transparent to-transparent"></div>
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center">
+
+      <!-- Headline Panel -->
+      <div class="lg:col-span-3 text-center lg:text-left space-y-6">
+        <span class="inline-flex items-center space-x-2 px-3 py-1 bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold uppercase tracking-wider rounded-full">
+          <i class="fa-solid fa-bolt text-amber-400 animate-pulse"></i>
+          <span>Engineering & Architecture Journal</span>
+        </span>
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-none">
+          Deep Technical Insights <br>
+          <span class="bg-gradient-to-r from-sky-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">For Modern IT Teams</span>
+        </h1>
+        <p class="text-slate-300 text-base sm:text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed">
+          Production blueprints, system design trade-offs, security controls, and hands-on LLM orchestration guides written for senior engineers and system architects.
+        </p>
+        <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4">
+          <a href="#publications" class="px-6 py-3 bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-sky-500/25 transition-all hover:scale-105">
+            Start Reading
+          </a>
+          <a href="{{ '/about.html' | relative_url }}" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold rounded-xl border border-slate-700 hover:border-slate-600 transition-all">
+            Meet the Author
+          </a>
+        </div>
+      </div>
+
+      <!-- Quick Stats Card -->
+      <div class="lg:col-span-2 bg-slate-900/50 backdrop-blur-md p-8 rounded-2xl border border-slate-800 shadow-2xl relative">
+        <div class="absolute -top-3 -right-3 w-12 h-12 bg-sky-500/10 border border-sky-500/20 rounded-full flex items-center justify-center text-sky-400">
+          <i class="fa-solid fa-terminal"></i>
+        </div>
+        <h3 class="font-bold text-sm uppercase tracking-wider text-slate-400 mb-6 border-b border-slate-800 pb-3">Harvey's Workspace Stats</h3>
+        <div class="space-y-4">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-400">Infrastructure Focus</span>
+            <span class="font-bold text-white">Kubernetes / AWS</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-400">DevSecOps Stack</span>
+            <span class="font-bold text-white">Trivy / Cosign / Gitleaks</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-400">Current AI Focus</span>
+            <span class="font-bold text-white">Ollama + RAG Integration</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-slate-400">Last Code Update</span>
+            <span class="font-bold text-sky-400">February 2025</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Main Article List Dashboard & Interaction Center -->
+<section id="publications" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+
+  <!-- Interactive Navigation & Filter Header -->
+  <div class="mb-12 border-b border-slate-200 dark:border-slate-800 pb-8">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div>
+        <h2 class="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tight">Publications Directory</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Search, filter, or explore detailed publications across IT topics.</p>
+      </div>
+
+      <!-- Live Search Box with Icon -->
+      <div class="relative w-full md:w-80">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 pointer-events-none">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </span>
+        <input type="text" id="search-input" placeholder="Search title, tags, excerpts..." class="w-full pl-10 pr-10 py-2.5 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-850 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent shadow-sm text-sm transition-all" aria-label="Search Blog Posts">
+        <button id="clear-search" class="absolute inset-y-0 right-0 hidden items-center pr-3 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors" aria-label="Clear Search Input">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Interactive Category Chips Filter -->
+    <div class="mt-8 flex flex-wrap gap-2 items-center" id="categories">
+      <span class="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mr-2">Filter Category:</span>
+      <button class="category-chip px-4 py-2 bg-sky-600 text-white text-xs font-bold rounded-xl transition-all shadow-sm" data-category="all">
+        All Posts
+      </button>
+      {% assign categories = site.posts | map: 'category' | uniq %}
+      {% for category in categories %}
+        <button class="category-chip px-4 py-2 bg-white hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-850 transition-all shadow-sm" data-category="{{ category | downcase }}">
+          {{ category }}
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Search Information Alert -->
+  <div id="search-results-feedback" class="hidden mb-8 p-4 bg-sky-50 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/30 text-sky-800 dark:text-sky-300 rounded-xl text-sm flex items-center justify-between">
+    <span id="feedback-text">Searching blog posts...</span>
+    <button id="reset-search-link" class="underline hover:text-sky-600 font-bold">Reset Filters</button>
+  </div>
+
+  <!-- Master Posts Grid Wrapper -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="posts-grid">
+
+    <!-- Loop through all available posts -->
+    {% for post in site.posts %}
+      <article class="post-card bg-white dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-850 overflow-hidden shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-750 transition-all duration-300 flex flex-col group h-full"
+               data-category="{{ post.category | downcase }}"
+               data-title="{{ post.title | escape }}"
+               data-tags="{{ post.tags | join: ',' | downcase }}"
+               data-excerpt="{{ post.excerpt | strip_html | escape }}">
+
+        <!-- Post Category & Read Time header -->
+        <div class="p-6 pb-4 flex items-center justify-between">
+          <span class="px-2.5 py-1 bg-sky-50 dark:bg-sky-950/30 text-sky-600 dark:text-sky-400 text-[10px] font-bold uppercase tracking-widest rounded-lg">
+            {{ post.category }}
+          </span>
+          <span class="text-xs text-slate-400 dark:text-slate-500 flex items-center space-x-1 font-medium">
+            <i class="fa-regular fa-clock"></i>
+            <span>{{ post.read_time }}</span>
+          </span>
+        </div>
+
+        <!-- Post Content Main Grid -->
+        <div class="px-6 flex-grow flex flex-col">
+          <a href="{{ post.url | relative_url }}" class="group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+            <h3 class="text-lg font-bold text-slate-950 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors line-clamp-2 leading-snug">
+              {{ post.title }}
+            </h3>
+          </a>
+
+          <p class="text-slate-500 dark:text-slate-400 text-sm mt-3 leading-relaxed flex-grow line-clamp-3">
+            {{ post.excerpt | strip_html | truncate: 150 }}
+          </p>
+        </div>
+
+        <!-- Tag list & Read More button footer -->
+        <div class="p-6 pt-4 border-t border-slate-100 dark:border-slate-800/60 mt-auto">
+          <div class="flex items-center justify-between">
+            <time class="text-xs text-slate-400 dark:text-slate-500 font-medium">
+              {{ post.date | date: "%B %d, %Y" }}
+            </time>
+            <a href="{{ post.url | relative_url }}" class="inline-flex items-center text-xs font-bold text-sky-600 hover:text-sky-500 dark:text-sky-400 dark:hover:text-sky-300 transition-colors group/btn">
+              <span>Read Full Article</span>
+              <i class="fa-solid fa-arrow-right ml-1 transition-transform group-hover/btn:translate-x-1"></i>
+            </a>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+
+  </div>
+
+  <!-- Empty Search Results Message -->
+  <div id="no-results-card" class="hidden text-center py-16 bg-white dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-850 p-8 max-w-md mx-auto">
+    <div class="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 mx-auto mb-4 text-2xl">
+      <i class="fa-solid fa-folder-open"></i>
+    </div>
+    <h3 class="font-bold text-slate-900 dark:text-white text-lg">No publications match your filter</h3>
+    <p class="text-slate-500 dark:text-slate-400 text-sm mt-2">Try adjusting your keywords or selecting a different category tab.</p>
+    <button id="no-results-reset-btn" class="mt-4 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition-colors shadow-md">
+      Reset Active Filters
+    </button>
+  </div>
+
+</section>
+
+<!-- Search and Filtering Interactive Script -->
+<script src="{{ '/assets/js/search.js' | relative_url }}"></script>
