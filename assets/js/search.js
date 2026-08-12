@@ -4,6 +4,7 @@
  */
 (() => {
   let searchDatabase = null;
+  let searchDatabasePromise = null;
   let activeCategory = 'all';
   let activeQuery = '';
 
@@ -20,17 +21,26 @@
   const noResultsResetBtn = document.getElementById('no-results-reset-btn');
 
   // Load search.json asynchronously once the user starts typing to optimize page load times
-  const fetchSearchDatabase = async () => {
-    if (searchDatabase) return searchDatabase;
-    try {
-      const res = await fetch('/search.json');
-      if (!res.ok) throw new Error('Failed to fetch search JSON indexes');
-      searchDatabase = await res.json();
-      return searchDatabase;
-    } catch (err) {
-      console.error('Error loading client side search indexes:', err);
-      return [];
-    }
+  // Optimized: Cache the promise itself to prevent multiple duplicate concurrent HTTP requests when typing rapidly.
+  const fetchSearchDatabase = () => {
+    if (searchDatabasePromise) return searchDatabasePromise;
+
+    searchDatabasePromise = fetch('/search.json')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch search JSON indexes');
+        return res.json();
+      })
+      .then(data => {
+        searchDatabase = data;
+        return data;
+      })
+      .catch(err => {
+        console.error('Error loading client side search indexes:', err);
+        searchDatabasePromise = null; // Allow retry on subsequent attempts if failed
+        return [];
+      });
+
+    return searchDatabasePromise;
   };
 
   // Perform search and category matching
@@ -101,11 +111,19 @@
   };
 
   // Attach search input listeners
+  // Optimized: Debounce input handling by 150ms to avoid layout thrashing on every rapid keystroke, while prefetching the database immediately.
   if (searchInput) {
-    searchInput.addEventListener('input', async (e) => {
+    let debounceTimeout = null;
+    searchInput.addEventListener('input', (e) => {
       activeQuery = e.target.value;
-      await fetchSearchDatabase(); // Pre-fetch database index
-      applyFilters();
+
+      // Start/ensure database pre-fetch immediately when typing begins
+      fetchSearchDatabase();
+
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => {
+        applyFilters();
+      }, 150); // 150ms is perfect: imperceptible delay but filters out rapid typing noise
     });
   }
 
