@@ -3,7 +3,6 @@
  * Concurrency-safe, async-driven client-side blog post filter matching queries dynamically.
  */
 (() => {
-  let searchDatabase = null;
   let activeCategory = 'all';
   let activeQuery = '';
 
@@ -18,20 +17,6 @@
   const feedbackText = document.getElementById('feedback-text');
   const resetSearchLink = document.getElementById('reset-search-link');
   const noResultsResetBtn = document.getElementById('no-results-reset-btn');
-
-  // Load search.json asynchronously once the user starts typing to optimize page load times
-  const fetchSearchDatabase = async () => {
-    if (searchDatabase) return searchDatabase;
-    try {
-      const res = await fetch('/search.json');
-      if (!res.ok) throw new Error('Failed to fetch search JSON indexes');
-      searchDatabase = await res.json();
-      return searchDatabase;
-    } catch (err) {
-      console.error('Error loading client side search indexes:', err);
-      return [];
-    }
-  };
 
   // Perform search and category matching
   const applyFilters = () => {
@@ -100,12 +85,24 @@
     }
   };
 
+  // Debounce helper to limit DOM manipulation frequency during typing (prevents layout thrashing)
+  const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        func(...args);
+      }, delay);
+    };
+  };
+
+  const debouncedApplyFilters = debounce(applyFilters, 150);
+
   // Attach search input listeners
   if (searchInput) {
-    searchInput.addEventListener('input', async (e) => {
+    searchInput.addEventListener('input', (e) => {
       activeQuery = e.target.value;
-      await fetchSearchDatabase(); // Pre-fetch database index
-      applyFilters();
+      debouncedApplyFilters();
     });
   }
 
