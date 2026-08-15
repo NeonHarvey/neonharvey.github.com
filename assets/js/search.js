@@ -1,9 +1,8 @@
 /**
  * Harvey's IT Blog - Instant Search & Category Filtering JS Engine
- * Concurrency-safe, async-driven client-side blog post filter matching queries dynamically.
+ * Client-side blog post filter matching queries dynamically via DOM data attributes.
  */
 (() => {
-  let searchDatabase = null;
   let activeCategory = 'all';
   let activeQuery = '';
 
@@ -19,18 +18,16 @@
   const resetSearchLink = document.getElementById('reset-search-link');
   const noResultsResetBtn = document.getElementById('no-results-reset-btn');
 
-  // Load search.json asynchronously once the user starts typing to optimize page load times
-  const fetchSearchDatabase = async () => {
-    if (searchDatabase) return searchDatabase;
-    try {
-      const res = await fetch('/search.json');
-      if (!res.ok) throw new Error('Failed to fetch search JSON indexes');
-      searchDatabase = await res.json();
-      return searchDatabase;
-    } catch (err) {
-      console.error('Error loading client side search indexes:', err);
-      return [];
-    }
+  /**
+   * Debounce utility to reduce layout thrashing during rapid input typing.
+   * Delays function execution until after 150ms has elapsed since the last call.
+   */
+  const debounce = (fn, delay = 150) => {
+    let timeoutId;
+    return (...args) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => fn(...args), delay);
+    };
   };
 
   // Perform search and category matching
@@ -100,16 +97,18 @@
     }
   };
 
+  // Debounced filter application for user keystrokes
+  const debouncedApplyFilters = debounce(applyFilters, 150);
+
   // Attach search input listeners
   if (searchInput) {
-    searchInput.addEventListener('input', async (e) => {
+    searchInput.addEventListener('input', (e) => {
       activeQuery = e.target.value;
-      await fetchSearchDatabase(); // Pre-fetch database index
-      applyFilters();
+      debouncedApplyFilters();
     });
   }
 
-  // Clear Search logic
+  // Clear Search logic (immediate UI update without debounce)
   const clearSearch = () => {
     if (searchInput) {
       searchInput.value = '';
@@ -132,11 +131,7 @@
       const category = chip.getAttribute('data-category');
       activeCategory = category;
 
-      if (category === 'all') {
-        chip.className = 'category-chip px-4 py-2 bg-sky-600 text-white text-xs font-bold rounded-xl transition-all shadow-sm';
-      } else {
-        chip.className = 'category-chip px-4 py-2 bg-sky-600 text-white text-xs font-bold rounded-xl transition-all shadow-sm';
-      }
+      chip.className = 'category-chip px-4 py-2 bg-sky-600 text-white text-xs font-bold rounded-xl transition-all shadow-sm';
 
       applyFilters();
     });
