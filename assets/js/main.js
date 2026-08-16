@@ -39,18 +39,35 @@
 
 
   // --- Dynamic Scroll to Top Animation Trigger ---
+  // Performance optimization: Throttle scroll checks using requestAnimationFrame, passive scroll listener,
+  // and state tracking (isVisible) to eliminate redundant DOM classList mutations on every scroll frame.
   const scrollTopBtn = document.getElementById('scroll-to-top');
 
   if (scrollTopBtn) {
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 300) {
-        scrollTopBtn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
-        scrollTopBtn.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
-      } else {
-        scrollTopBtn.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
-        scrollTopBtn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+    let isVisible = false;
+    let ticking = false;
+
+    const updateScrollTop = () => {
+      const shouldBeVisible = window.scrollY > 300;
+      if (shouldBeVisible !== isVisible) {
+        isVisible = shouldBeVisible;
+        if (isVisible) {
+          scrollTopBtn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+          scrollTopBtn.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+        } else {
+          scrollTopBtn.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+          scrollTopBtn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+        }
       }
-    });
+      ticking = false;
+    };
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateScrollTop);
+        ticking = true;
+      }
+    }, { passive: true });
 
     scrollTopBtn.addEventListener('click', () => {
       window.scrollTo({
