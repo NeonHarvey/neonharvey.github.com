@@ -133,17 +133,34 @@ layout: default
 
 <!-- Custom Scroll & Progress script -->
 <script>
+  // Optimize reading progress bar update with requestAnimationFrame throttling and passive event listeners
   window.addEventListener('DOMContentLoaded', () => {
     const progressBar = document.getElementById('reading-progress');
+    if (!progressBar) return;
+
+    let ticking = false;
+
     const updateProgress = () => {
       const scrollY = window.scrollY;
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
       if (docHeight > 0) {
-        const scrolledPct = (scrollY / docHeight) * 100;
+        const scrolledPct = Math.min(100, Math.max(0, (scrollY / docHeight) * 100));
         progressBar.style.width = scrolledPct + '%';
       }
+      ticking = false;
     };
-    window.addEventListener('scroll', updateProgress);
-    window.addEventListener('resize', updateProgress);
+
+    const requestUpdate = () => {
+      if (!ticking) {
+        requestAnimationFrame(updateProgress);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', requestUpdate, { passive: true });
+    window.addEventListener('resize', requestUpdate, { passive: true });
+
+    // Initial check on load
+    requestUpdate();
   });
 </script>
