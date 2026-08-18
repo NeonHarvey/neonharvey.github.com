@@ -6,6 +6,7 @@
   let searchDatabase = null;
   let activeCategory = 'all';
   let activeQuery = '';
+  let searchDebounceTimeout = null;
 
   // DOM Elements
   const searchInput = document.getElementById('search-input');
@@ -100,12 +101,16 @@
     }
   };
 
-  // Attach search input listeners
+  // Performance Optimization: Debounce search input listener by 150ms
+  // to prevent unnecessary filtering operations and network fetches on rapid keypresses.
   if (searchInput) {
-    searchInput.addEventListener('input', async (e) => {
+    searchInput.addEventListener('input', (e) => {
       activeQuery = e.target.value;
-      await fetchSearchDatabase(); // Pre-fetch database index
-      applyFilters();
+      if (searchDebounceTimeout) clearTimeout(searchDebounceTimeout);
+      searchDebounceTimeout = setTimeout(async () => {
+        await fetchSearchDatabase(); // Pre-fetch database index
+        applyFilters();
+      }, 150);
     });
   }
 
