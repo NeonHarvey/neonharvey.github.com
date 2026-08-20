@@ -1,6 +1,7 @@
 /**
  * Harvey's IT Blog - Instant Search & Category Filtering JS Engine
  * Concurrency-safe, async-driven client-side blog post filter matching queries dynamically.
+ * Optimized with search debouncing and cached metadata to eliminate DOM thrashing.
  */
 (() => {
   let searchDatabase = null;
@@ -19,6 +20,25 @@
   const resetSearchLink = document.getElementById('reset-search-link');
   const noResultsResetBtn = document.getElementById('no-results-reset-btn');
 
+  // Debounce helper to prevent excessive function execution and DOM recalculations on fast typing
+  const debounce = (func, wait = 150) => {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  };
+
+  // Cache post card DOM references and lowercased attribute metadata once on initialization
+  // Performance win: eliminates repeated getAttribute() DOM queries and .toLowerCase() string transformations during filter execution
+  const cardCache = Array.from(postCards).map(card => ({
+    element: card,
+    category: (card.getAttribute('data-category') || '').toLowerCase(),
+    title: (card.getAttribute('data-title') || '').toLowerCase(),
+    tags: (card.getAttribute('data-tags') || '').toLowerCase(),
+    excerpt: (card.getAttribute('data-excerpt') || '').toLowerCase()
+  }));
+
   // Load search.json asynchronously once the user starts typing to optimize page load times
   const fetchSearchDatabase = async () => {
     if (searchDatabase) return searchDatabase;
@@ -33,35 +53,31 @@
     }
   };
 
-  // Perform search and category matching
+  // Perform search and category matching using pre-cached card metadata
   const applyFilters = () => {
     const q = activeQuery.trim().toLowerCase();
+    const cat = activeCategory.toLowerCase();
     let visibleCount = 0;
 
-    postCards.forEach(card => {
-      const category = card.getAttribute('data-category') || '';
-      const title = card.getAttribute('data-title') || '';
-      const tags = card.getAttribute('data-tags') || '';
-      const excerpt = card.getAttribute('data-excerpt') || '';
-
+    cardCache.forEach(({ element, category, title, tags, excerpt }) => {
       // Check Category Match
-      const matchesCategory = (activeCategory === 'all' || category === activeCategory);
+      const matchesCategory = (cat === 'all' || category === cat);
 
       // Check Search Term Match
       let matchesSearch = true;
       if (q !== '') {
-        matchesSearch = title.toLowerCase().includes(q) ||
-                        tags.toLowerCase().includes(q) ||
-                        excerpt.toLowerCase().includes(q) ||
-                        category.toLowerCase().includes(q);
+        matchesSearch = title.includes(q) ||
+                        tags.includes(q) ||
+                        excerpt.includes(q) ||
+                        category.includes(q);
       }
 
       // Display card if matches both criteria
       if (matchesCategory && matchesSearch) {
-        card.style.display = 'flex';
+        element.style.display = 'flex';
         visibleCount++;
       } else {
-        card.style.display = 'none';
+        element.style.display = 'none';
       }
     });
 
@@ -100,13 +116,15 @@
     }
   };
 
-  // Attach search input listeners
+  // Attach search input listener with 150ms debounce
   if (searchInput) {
-    searchInput.addEventListener('input', async (e) => {
+    const handleInput = async (e) => {
       activeQuery = e.target.value;
       await fetchSearchDatabase(); // Pre-fetch database index
       applyFilters();
-    });
+    };
+
+    searchInput.addEventListener('input', debounce(handleInput, 150));
   }
 
   // Clear Search logic
