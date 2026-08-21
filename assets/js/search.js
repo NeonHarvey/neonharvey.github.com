@@ -33,35 +33,40 @@
     }
   };
 
+  // Performance Optimization: Pre-cache DOM card metadata and lowercased attributes
+  // to eliminate redundant DOM getAttribute() calls and string lowercasing during live search.
+  const cachedCards = Array.from(postCards).map(card => ({
+    element: card,
+    category: (card.getAttribute('data-category') || '').toLowerCase(),
+    title: (card.getAttribute('data-title') || '').toLowerCase(),
+    tags: (card.getAttribute('data-tags') || '').toLowerCase(),
+    excerpt: (card.getAttribute('data-excerpt') || '').toLowerCase(),
+  }));
+
   // Perform search and category matching
   const applyFilters = () => {
     const q = activeQuery.trim().toLowerCase();
     let visibleCount = 0;
 
-    postCards.forEach(card => {
-      const category = card.getAttribute('data-category') || '';
-      const title = card.getAttribute('data-title') || '';
-      const tags = card.getAttribute('data-tags') || '';
-      const excerpt = card.getAttribute('data-excerpt') || '';
-
+    cachedCards.forEach(item => {
       // Check Category Match
-      const matchesCategory = (activeCategory === 'all' || category === activeCategory);
+      const matchesCategory = (activeCategory === 'all' || item.category === activeCategory);
 
       // Check Search Term Match
       let matchesSearch = true;
       if (q !== '') {
-        matchesSearch = title.toLowerCase().includes(q) ||
-                        tags.toLowerCase().includes(q) ||
-                        excerpt.toLowerCase().includes(q) ||
-                        category.toLowerCase().includes(q);
+        matchesSearch = item.title.includes(q) ||
+                        item.tags.includes(q) ||
+                        item.excerpt.includes(q) ||
+                        item.category.includes(q);
       }
 
       // Display card if matches both criteria
       if (matchesCategory && matchesSearch) {
-        card.style.display = 'flex';
+        item.element.style.display = 'flex';
         visibleCount++;
       } else {
-        card.style.display = 'none';
+        item.element.style.display = 'none';
       }
     });
 
@@ -100,12 +105,17 @@
     }
   };
 
-  // Attach search input listeners
+  // Performance Optimization: Debounce search input listener (150ms delay) to avoid
+  // executing filter computations and DOM layouts on every keystroke.
+  let debounceTimer = null;
   if (searchInput) {
-    searchInput.addEventListener('input', async (e) => {
+    searchInput.addEventListener('input', (e) => {
       activeQuery = e.target.value;
-      await fetchSearchDatabase(); // Pre-fetch database index
-      applyFilters();
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(async () => {
+        await fetchSearchDatabase(); // Pre-fetch database index
+        applyFilters();
+      }, 150);
     });
   }
 
