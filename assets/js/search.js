@@ -19,6 +19,25 @@
   const resetSearchLink = document.getElementById('reset-search-link');
   const noResultsResetBtn = document.getElementById('no-results-reset-btn');
 
+  // Performance Optimization: Cache DOM attribute metadata in memory on initialization.
+  // Prevents repeated getAttribute() reads and layout thrashing during live filtering loops.
+  const cardsData = Array.from(postCards).map(card => ({
+    element: card,
+    category: (card.getAttribute('data-category') || '').toLowerCase(),
+    title: (card.getAttribute('data-title') || '').toLowerCase(),
+    tags: (card.getAttribute('data-tags') || '').toLowerCase(),
+    excerpt: (card.getAttribute('data-excerpt') || '').toLowerCase()
+  }));
+
+  // Performance Optimization: Debounce function to delay expensive search operations on rapid keystrokes.
+  const debounce = (fn, delay = 150) => {
+    let timerId;
+    return (...args) => {
+      clearTimeout(timerId);
+      timerId = setTimeout(() => fn(...args), delay);
+    };
+  };
+
   // Load search.json asynchronously once the user starts typing to optimize page load times
   const fetchSearchDatabase = async () => {
     if (searchDatabase) return searchDatabase;
@@ -38,30 +57,25 @@
     const q = activeQuery.trim().toLowerCase();
     let visibleCount = 0;
 
-    postCards.forEach(card => {
-      const category = card.getAttribute('data-category') || '';
-      const title = card.getAttribute('data-title') || '';
-      const tags = card.getAttribute('data-tags') || '';
-      const excerpt = card.getAttribute('data-excerpt') || '';
-
-      // Check Category Match
-      const matchesCategory = (activeCategory === 'all' || category === activeCategory);
+    cardsData.forEach(({ element, category, title, tags, excerpt }) => {
+      // Check Category Match (case-insensitive)
+      const matchesCategory = (activeCategory === 'all' || category === activeCategory.toLowerCase());
 
       // Check Search Term Match
       let matchesSearch = true;
       if (q !== '') {
-        matchesSearch = title.toLowerCase().includes(q) ||
-                        tags.toLowerCase().includes(q) ||
-                        excerpt.toLowerCase().includes(q) ||
-                        category.toLowerCase().includes(q);
+        matchesSearch = title.includes(q) ||
+                        tags.includes(q) ||
+                        excerpt.includes(q) ||
+                        category.includes(q);
       }
 
-      // Display card if matches both criteria
+      // Display card if matches both criteria; guard style writes to avoid unnecessary DOM mutations
       if (matchesCategory && matchesSearch) {
-        card.style.display = 'flex';
+        if (element.style.display !== 'flex') element.style.display = 'flex';
         visibleCount++;
       } else {
-        card.style.display = 'none';
+        if (element.style.display !== 'none') element.style.display = 'none';
       }
     });
 
@@ -100,13 +114,15 @@
     }
   };
 
-  // Attach search input listeners
+  // Attach debounced search input listeners to prevent main thread blocking during fast typing
   if (searchInput) {
-    searchInput.addEventListener('input', async (e) => {
+    const handleSearchInput = debounce(async (e) => {
       activeQuery = e.target.value;
       await fetchSearchDatabase(); // Pre-fetch database index
       applyFilters();
-    });
+    }, 150);
+
+    searchInput.addEventListener('input', handleSearchInput);
   }
 
   // Clear Search logic
