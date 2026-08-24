@@ -33,35 +33,50 @@
     }
   };
 
-  // Perform search and category matching
+  // Performance Optimization: Pre-parse and cache card dataset attributes in lowercase
+  // to avoid repeated getAttribute calls and string lowering on every keystroke.
+  const cardDataCache = Array.from(postCards).map(card => ({
+    element: card,
+    category: (card.getAttribute('data-category') || '').toLowerCase(),
+    title: (card.getAttribute('data-title') || '').toLowerCase(),
+    tags: (card.getAttribute('data-tags') || '').toLowerCase(),
+    excerpt: (card.getAttribute('data-excerpt') || '').toLowerCase()
+  }));
+
+  // Utility: Debounce function to limit execution rate of frequent input events
+  const debounce = (fn, delay = 150) => {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), delay);
+    };
+  };
+
+  // Perform search and category matching using cached data
   const applyFilters = () => {
     const q = activeQuery.trim().toLowerCase();
+    const cat = activeCategory.trim().toLowerCase();
     let visibleCount = 0;
 
-    postCards.forEach(card => {
-      const category = card.getAttribute('data-category') || '';
-      const title = card.getAttribute('data-title') || '';
-      const tags = card.getAttribute('data-tags') || '';
-      const excerpt = card.getAttribute('data-excerpt') || '';
-
-      // Check Category Match
-      const matchesCategory = (activeCategory === 'all' || category === activeCategory);
+    cardDataCache.forEach(item => {
+      // Check Category Match (case-insensitive comparison using lowercased category)
+      const matchesCategory = (cat === 'all' || item.category === cat);
 
       // Check Search Term Match
       let matchesSearch = true;
       if (q !== '') {
-        matchesSearch = title.toLowerCase().includes(q) ||
-                        tags.toLowerCase().includes(q) ||
-                        excerpt.toLowerCase().includes(q) ||
-                        category.toLowerCase().includes(q);
+        matchesSearch = item.title.includes(q) ||
+                        item.tags.includes(q) ||
+                        item.excerpt.includes(q) ||
+                        item.category.includes(q);
       }
 
       // Display card if matches both criteria
       if (matchesCategory && matchesSearch) {
-        card.style.display = 'flex';
+        item.element.style.display = 'flex';
         visibleCount++;
       } else {
-        card.style.display = 'none';
+        item.element.style.display = 'none';
       }
     });
 
@@ -100,12 +115,16 @@
     }
   };
 
-  // Attach search input listeners
+  // Attach search input listeners with debouncing (~150ms) to avoid main-thread jank during rapid typing
   if (searchInput) {
-    searchInput.addEventListener('input', async (e) => {
-      activeQuery = e.target.value;
-      await fetchSearchDatabase(); // Pre-fetch database index
+    const debouncedFilter = debounce(async () => {
+      await fetchSearchDatabase(); // Pre-fetch search database index inside debounced function
       applyFilters();
+    }, 150);
+
+    searchInput.addEventListener('input', (e) => {
+      activeQuery = e.target.value;
+      debouncedFilter();
     });
   }
 
