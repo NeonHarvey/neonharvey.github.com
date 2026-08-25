@@ -110,6 +110,19 @@
     }
   };
 
+  // Debounce helper to limit DOM manipulation frequency during typing (prevents layout thrashing)
+  const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        func(...args);
+      }, delay);
+    };
+  };
+
+  const debouncedApplyFilters = debounce(applyFilters, 150);
+
   // Attach search input listeners
   // Optimized: Debounce input handling by 150ms to avoid layout thrashing on every rapid keystroke, while prefetching the database immediately.
   if (searchInput) {
