@@ -3,6 +3,8 @@
  * Concurrency-safe, async-driven client-side blog post filter matching queries dynamically.
  */
 (() => {
+  let searchDatabase = null;
+  let searchDatabasePromise = null;
   let activeCategory = 'all';
   let activeQuery = '';
 
@@ -17,6 +19,29 @@
   const feedbackText = document.getElementById('feedback-text');
   const resetSearchLink = document.getElementById('reset-search-link');
   const noResultsResetBtn = document.getElementById('no-results-reset-btn');
+
+  // Load search.json asynchronously once the user starts typing to optimize page load times
+  // Optimized: Cache the promise itself to prevent multiple duplicate concurrent HTTP requests when typing rapidly.
+  const fetchSearchDatabase = () => {
+    if (searchDatabasePromise) return searchDatabasePromise;
+
+    searchDatabasePromise = fetch('/search.json')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch search JSON indexes');
+        return res.json();
+      })
+      .then(data => {
+        searchDatabase = data;
+        return data;
+      })
+      .catch(err => {
+        console.error('Error loading client side search indexes:', err);
+        searchDatabasePromise = null; // Allow retry on subsequent attempts if failed
+        return [];
+      });
+
+    return searchDatabasePromise;
+  };
 
   // Perform search and category matching
   const applyFilters = () => {
@@ -99,10 +124,19 @@
   const debouncedApplyFilters = debounce(applyFilters, 150);
 
   // Attach search input listeners
+  // Optimized: Debounce input handling by 150ms to avoid layout thrashing on every rapid keystroke, while prefetching the database immediately.
   if (searchInput) {
+    let debounceTimeout = null;
     searchInput.addEventListener('input', (e) => {
       activeQuery = e.target.value;
-      debouncedApplyFilters();
+
+      // Start/ensure database pre-fetch immediately when typing begins
+      fetchSearchDatabase();
+
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => {
+        applyFilters();
+      }, 150); // 150ms is perfect: imperceptible delay but filters out rapid typing noise
     });
   }
 

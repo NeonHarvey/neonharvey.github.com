@@ -132,15 +132,23 @@ layout: default
 </article>
 
 <!-- Custom Scroll & Progress script -->
+<!-- Optimized: Throttled scroll and resize events using requestAnimationFrame to prevent layout thrashing and keep performance high. -->
 <script>
   window.addEventListener('DOMContentLoaded', () => {
     const progressBar = document.getElementById('reading-progress');
+    let ticking = false;
     const updateProgress = () => {
-      const scrollY = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (docHeight > 0) {
-        const scrolledPct = (scrollY / docHeight) * 100;
-        progressBar.style.width = scrolledPct + '%';
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+          if (docHeight > 0) {
+            const scrolledPct = (scrollY / docHeight) * 100;
+            progressBar.style.width = scrolledPct + '%';
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
     window.addEventListener('scroll', updateProgress);
