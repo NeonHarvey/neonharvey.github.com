@@ -1,6 +1,7 @@
 /**
  * Harvey's IT Blog - Instant Search & Category Filtering JS Engine
  * Concurrency-safe, async-driven client-side blog post filter matching queries dynamically.
+ * Optimized by Bolt: Pre-caches DOM card attributes and removes unused /search.json fetch.
  */
 (() => {
   let searchDatabase = null;
@@ -20,6 +21,18 @@
   const resetSearchLink = document.getElementById('reset-search-link');
   const noResultsResetBtn = document.getElementById('no-results-reset-btn');
 
+  // Performance Optimization: Cache post card elements and their data-attributes
+  // on page load to prevent slow repeated DOM lookups and string lowercasing on every keystroke.
+  const cachedCards = Array.from(postCards).map(card => {
+    return {
+      element: card,
+      category: card.getAttribute('data-category') || '',
+      categoryLower: (card.getAttribute('data-category') || '').toLowerCase(),
+      titleLower: (card.getAttribute('data-title') || '').toLowerCase(),
+      tagsLower: (card.getAttribute('data-tags') || '').toLowerCase(),
+      excerptLower: (card.getAttribute('data-excerpt') || '').toLowerCase()
+    };
+  });
   // Load search.json asynchronously once the user starts typing to optimize page load times
   // Optimized: Cache the promise itself to prevent multiple duplicate concurrent HTTP requests when typing rapidly.
   const fetchSearchDatabase = () => {
@@ -48,30 +61,25 @@
     const q = activeQuery.trim().toLowerCase();
     let visibleCount = 0;
 
-    postCards.forEach(card => {
-      const category = card.getAttribute('data-category') || '';
-      const title = card.getAttribute('data-title') || '';
-      const tags = card.getAttribute('data-tags') || '';
-      const excerpt = card.getAttribute('data-excerpt') || '';
-
-      // Check Category Match
-      const matchesCategory = (activeCategory === 'all' || category === activeCategory);
+    cachedCards.forEach(card => {
+      // Check Category Match (case-insensitive for robustness)
+      const matchesCategory = (activeCategory === 'all' || card.categoryLower === activeCategory.toLowerCase());
 
       // Check Search Term Match
       let matchesSearch = true;
       if (q !== '') {
-        matchesSearch = title.toLowerCase().includes(q) ||
-                        tags.toLowerCase().includes(q) ||
-                        excerpt.toLowerCase().includes(q) ||
-                        category.toLowerCase().includes(q);
+        matchesSearch = card.titleLower.includes(q) ||
+                        card.tagsLower.includes(q) ||
+                        card.excerptLower.includes(q) ||
+                        card.categoryLower.includes(q);
       }
 
       // Display card if matches both criteria
       if (matchesCategory && matchesSearch) {
-        card.style.display = 'flex';
+        card.element.style.display = 'flex';
         visibleCount++;
       } else {
-        card.style.display = 'none';
+        card.element.style.display = 'none';
       }
     });
 
@@ -113,6 +121,9 @@
   // Attach search input listeners
   // Optimized: Debounce input handling by 150ms to avoid layout thrashing on every rapid keystroke, while prefetching the database immediately.
   if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      activeQuery = e.target.value;
+      applyFilters();
     let debounceTimeout = null;
     searchInput.addEventListener('input', (e) => {
       activeQuery = e.target.value;
