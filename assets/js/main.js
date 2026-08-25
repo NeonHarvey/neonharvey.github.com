@@ -39,16 +39,24 @@
 
 
   // --- Dynamic Scroll to Top Animation Trigger ---
+  // Optimized: Throttled scroll listener using requestAnimationFrame to prevent layout thrashing and keep scrolling butter-smooth.
   const scrollTopBtn = document.getElementById('scroll-to-top');
 
   if (scrollTopBtn) {
+    let ticking = false;
     window.addEventListener('scroll', () => {
-      if (window.scrollY > 300) {
-        scrollTopBtn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
-        scrollTopBtn.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
-      } else {
-        scrollTopBtn.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
-        scrollTopBtn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (window.scrollY > 300) {
+            scrollTopBtn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+            scrollTopBtn.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+          } else {
+            scrollTopBtn.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+            scrollTopBtn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     });
 

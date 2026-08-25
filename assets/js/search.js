@@ -4,6 +4,8 @@
  * Optimized by Bolt: Pre-caches DOM card attributes and removes unused /search.json fetch.
  */
 (() => {
+  let searchDatabase = null;
+  let searchDatabasePromise = null;
   let activeCategory = 'all';
   let activeQuery = '';
 
@@ -31,6 +33,28 @@
       excerptLower: (card.getAttribute('data-excerpt') || '').toLowerCase()
     };
   });
+  // Load search.json asynchronously once the user starts typing to optimize page load times
+  // Optimized: Cache the promise itself to prevent multiple duplicate concurrent HTTP requests when typing rapidly.
+  const fetchSearchDatabase = () => {
+    if (searchDatabasePromise) return searchDatabasePromise;
+
+    searchDatabasePromise = fetch('/search.json')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch search JSON indexes');
+        return res.json();
+      })
+      .then(data => {
+        searchDatabase = data;
+        return data;
+      })
+      .catch(err => {
+        console.error('Error loading client side search indexes:', err);
+        searchDatabasePromise = null; // Allow retry on subsequent attempts if failed
+        return [];
+      });
+
+    return searchDatabasePromise;
+  };
 
   // Perform search and category matching
   const applyFilters = () => {
@@ -95,10 +119,22 @@
   };
 
   // Attach search input listeners
+  // Optimized: Debounce input handling by 150ms to avoid layout thrashing on every rapid keystroke, while prefetching the database immediately.
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       activeQuery = e.target.value;
       applyFilters();
+    let debounceTimeout = null;
+    searchInput.addEventListener('input', (e) => {
+      activeQuery = e.target.value;
+
+      // Start/ensure database pre-fetch immediately when typing begins
+      fetchSearchDatabase();
+
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => {
+        applyFilters();
+      }, 150); // 150ms is perfect: imperceptible delay but filters out rapid typing noise
     });
   }
 
