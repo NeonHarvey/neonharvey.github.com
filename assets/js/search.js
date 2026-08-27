@@ -20,6 +20,25 @@
   const resetSearchLink = document.getElementById('reset-search-link');
   const noResultsResetBtn = document.getElementById('no-results-reset-btn');
 
+  // Bolt ⚡ Optimization: Pre-cache DOM elements and pre-compute lowercased metadata string properties once at initialization.
+  // This avoids expensive repeated DOM `getAttribute` lookups and string allocation `.toLowerCase()` calls on every single keypress or filter click.
+  const cachedPosts = Array.from(postCards).map(card => {
+    const category = card.getAttribute('data-category') || '';
+    const title = card.getAttribute('data-title') || '';
+    const tags = card.getAttribute('data-tags') || '';
+    const excerpt = card.getAttribute('data-excerpt') || '';
+
+    return {
+      element: card,
+      category: category,
+      categoryLower: category.toLowerCase(),
+      titleLower: title.toLowerCase(),
+      tagsLower: tags.toLowerCase(),
+      excerptLower: excerpt.toLowerCase(),
+      isVisible: true // Track visibility state to minimize redundant DOM style writes
+    };
+  });
+
   // Load search.json asynchronously once the user starts typing to optimize page load times
   // Optimized: Cache the promise itself to prevent multiple duplicate concurrent HTTP requests when typing rapidly.
   const fetchSearchDatabase = () => {
@@ -48,32 +67,37 @@
     const q = activeQuery.trim().toLowerCase();
     let visibleCount = 0;
 
-    postCards.forEach(card => {
-      const category = card.getAttribute('data-category') || '';
-      const title = card.getAttribute('data-title') || '';
-      const tags = card.getAttribute('data-tags') || '';
-      const excerpt = card.getAttribute('data-excerpt') || '';
+    // Bolt ⚡ Optimization: Iterate over cached JavaScript objects instead of querying DOM attributes.
+    for (let i = 0; i < cachedPosts.length; i++) {
+      const card = cachedPosts[i];
 
       // Check Category Match
-      const matchesCategory = (activeCategory === 'all' || category === activeCategory);
+      const matchesCategory = (activeCategory === 'all' || card.category === activeCategory);
 
       // Check Search Term Match
       let matchesSearch = true;
       if (q !== '') {
-        matchesSearch = title.toLowerCase().includes(q) ||
-                        tags.toLowerCase().includes(q) ||
-                        excerpt.toLowerCase().includes(q) ||
-                        category.toLowerCase().includes(q);
+        matchesSearch = card.titleLower.includes(q) ||
+                        card.tagsLower.includes(q) ||
+                        card.excerptLower.includes(q) ||
+                        card.categoryLower.includes(q);
       }
 
-      // Display card if matches both criteria
-      if (matchesCategory && matchesSearch) {
-        card.style.display = 'flex';
+      const shouldBeVisible = matchesCategory && matchesSearch;
+
+      if (shouldBeVisible) {
         visibleCount++;
+        if (!card.isVisible) {
+          card.element.style.display = 'flex';
+          card.isVisible = true;
+        }
       } else {
-        card.style.display = 'none';
+        if (card.isVisible) {
+          card.element.style.display = 'none';
+          card.isVisible = false;
+        }
       }
-    });
+    }
 
     // Update UI Elements based on visible counts
     if (visibleCount === 0) {
