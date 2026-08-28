@@ -20,6 +20,16 @@
   const resetSearchLink = document.getElementById('reset-search-link');
   const noResultsResetBtn = document.getElementById('no-results-reset-btn');
 
+  // Pre-parse and cache DOM attributes and lowercased string values upfront on script load.
+  // Performance optimization: Avoids calling getAttribute() 4x per card and lowercasing strings repeatedly on every single keystroke.
+  const cardsData = Array.from(postCards).map(card => ({
+    element: card,
+    category: (card.getAttribute('data-category') || '').toLowerCase(),
+    title: (card.getAttribute('data-title') || '').toLowerCase(),
+    tags: (card.getAttribute('data-tags') || '').toLowerCase(),
+    excerpt: (card.getAttribute('data-excerpt') || '').toLowerCase(),
+  }));
+
   // Load search.json asynchronously once the user starts typing to optimize page load times
   // Optimized: Cache the promise itself to prevent multiple duplicate concurrent HTTP requests when typing rapidly.
   const fetchSearchDatabase = () => {
@@ -44,34 +54,31 @@
   };
 
   // Perform search and category matching
+  // Optimized: Uses pre-cached cardsData metadata instead of repeated DOM attribute queries and lowercasing.
   const applyFilters = () => {
     const q = activeQuery.trim().toLowerCase();
+    const activeCategoryLower = activeCategory.toLowerCase();
     let visibleCount = 0;
 
-    postCards.forEach(card => {
-      const category = card.getAttribute('data-category') || '';
-      const title = card.getAttribute('data-title') || '';
-      const tags = card.getAttribute('data-tags') || '';
-      const excerpt = card.getAttribute('data-excerpt') || '';
-
+    cardsData.forEach(card => {
       // Check Category Match
-      const matchesCategory = (activeCategory === 'all' || category === activeCategory);
+      const matchesCategory = (activeCategoryLower === 'all' || card.category === activeCategoryLower);
 
       // Check Search Term Match
       let matchesSearch = true;
       if (q !== '') {
-        matchesSearch = title.toLowerCase().includes(q) ||
-                        tags.toLowerCase().includes(q) ||
-                        excerpt.toLowerCase().includes(q) ||
-                        category.toLowerCase().includes(q);
+        matchesSearch = card.title.includes(q) ||
+                        card.tags.includes(q) ||
+                        card.excerpt.includes(q) ||
+                        card.category.includes(q);
       }
 
       // Display card if matches both criteria
       if (matchesCategory && matchesSearch) {
-        card.style.display = 'flex';
+        card.element.style.display = 'flex';
         visibleCount++;
       } else {
-        card.style.display = 'none';
+        card.element.style.display = 'none';
       }
     });
 
