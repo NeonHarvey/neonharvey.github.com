@@ -20,6 +20,17 @@
   const resetSearchLink = document.getElementById('reset-search-link');
   const noResultsResetBtn = document.getElementById('no-results-reset-btn');
 
+  // Performance Optimization: Cache lowercased card metadata once at initialization.
+  // Prevents repeated DOM attribute queries (getAttribute) and string lowercasing (.toLowerCase()) on every keystroke/filter run.
+  const cardsCache = Array.from(postCards).map(card => ({
+    element: card,
+    category: (card.getAttribute('data-category') || '').toLowerCase(),
+    rawCategory: card.getAttribute('data-category') || '',
+    title: (card.getAttribute('data-title') || '').toLowerCase(),
+    tags: (card.getAttribute('data-tags') || '').toLowerCase(),
+    excerpt: (card.getAttribute('data-excerpt') || '').toLowerCase()
+  }));
+
   // Load search.json asynchronously once the user starts typing to optimize page load times
   // Optimized: Cache the promise itself to prevent multiple duplicate concurrent HTTP requests when typing rapidly.
   const fetchSearchDatabase = () => {
@@ -48,30 +59,25 @@
     const q = activeQuery.trim().toLowerCase();
     let visibleCount = 0;
 
-    postCards.forEach(card => {
-      const category = card.getAttribute('data-category') || '';
-      const title = card.getAttribute('data-title') || '';
-      const tags = card.getAttribute('data-tags') || '';
-      const excerpt = card.getAttribute('data-excerpt') || '';
-
+    cardsCache.forEach(item => {
       // Check Category Match
-      const matchesCategory = (activeCategory === 'all' || category === activeCategory);
+      const matchesCategory = (activeCategory === 'all' || item.rawCategory === activeCategory);
 
       // Check Search Term Match
       let matchesSearch = true;
       if (q !== '') {
-        matchesSearch = title.toLowerCase().includes(q) ||
-                        tags.toLowerCase().includes(q) ||
-                        excerpt.toLowerCase().includes(q) ||
-                        category.toLowerCase().includes(q);
+        matchesSearch = item.title.includes(q) ||
+                        item.tags.includes(q) ||
+                        item.excerpt.includes(q) ||
+                        item.category.includes(q);
       }
 
       // Display card if matches both criteria
       if (matchesCategory && matchesSearch) {
-        card.style.display = 'flex';
+        item.element.style.display = 'flex';
         visibleCount++;
       } else {
-        card.style.display = 'none';
+        item.element.style.display = 'none';
       }
     });
 
