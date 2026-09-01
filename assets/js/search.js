@@ -20,6 +20,20 @@
   const resetSearchLink = document.getElementById('reset-search-link');
   const noResultsResetBtn = document.getElementById('no-results-reset-btn');
 
+  // Performance Optimization: Cache post cards DOM references and pre-calculate lowercased attribute metadata
+  // to avoid redundant DOM reads (getAttribute) and string lowercasing operations on every filter iteration.
+  const postItems = Array.from(postCards).map(card => {
+    const rawCategory = card.getAttribute('data-category') || '';
+    return {
+      element: card,
+      category: rawCategory,
+      categoryLower: rawCategory.toLowerCase(),
+      titleLower: (card.getAttribute('data-title') || '').toLowerCase(),
+      tagsLower: (card.getAttribute('data-tags') || '').toLowerCase(),
+      excerptLower: (card.getAttribute('data-excerpt') || '').toLowerCase()
+    };
+  });
+
   // Load search.json asynchronously once the user starts typing to optimize page load times
   // Optimized: Cache the promise itself to prevent multiple duplicate concurrent HTTP requests when typing rapidly.
   const fetchSearchDatabase = () => {
@@ -48,30 +62,25 @@
     const q = activeQuery.trim().toLowerCase();
     let visibleCount = 0;
 
-    postCards.forEach(card => {
-      const category = card.getAttribute('data-category') || '';
-      const title = card.getAttribute('data-title') || '';
-      const tags = card.getAttribute('data-tags') || '';
-      const excerpt = card.getAttribute('data-excerpt') || '';
+    postItems.forEach(item => {
+      // Check Category Match (early return optimization)
+      const matchesCategory = (activeCategory === 'all' || item.category === activeCategory);
 
-      // Check Category Match
-      const matchesCategory = (activeCategory === 'all' || category === activeCategory);
-
-      // Check Search Term Match
+      // Check Search Term Match using pre-lowercased metadata cache
       let matchesSearch = true;
-      if (q !== '') {
-        matchesSearch = title.toLowerCase().includes(q) ||
-                        tags.toLowerCase().includes(q) ||
-                        excerpt.toLowerCase().includes(q) ||
-                        category.toLowerCase().includes(q);
+      if (matchesCategory && q !== '') {
+        matchesSearch = item.titleLower.includes(q) ||
+                        item.tagsLower.includes(q) ||
+                        item.excerptLower.includes(q) ||
+                        item.categoryLower.includes(q);
       }
 
       // Display card if matches both criteria
       if (matchesCategory && matchesSearch) {
-        card.style.display = 'flex';
+        item.element.style.display = 'flex';
         visibleCount++;
       } else {
-        card.style.display = 'none';
+        item.element.style.display = 'none';
       }
     });
 
